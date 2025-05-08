@@ -1,11 +1,13 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const generateToken = (userId) => {
-    return jwt.sign({id: userId}, process.JWT_SECRET, {expiresIn: '7d'});
+    return jwt.sign({id: userId}, process.env.JWT_SECRET, {expiresIn: '7d'});
 }
 
-//Register
 export const registerUser = async(req, res) => {
     const {name, email, password} = req.body;
     try{
@@ -13,6 +15,7 @@ export const registerUser = async(req, res) => {
         if(existingUser) return res.status(400).json({message: "User already exists"});
 
         const user = await User.create({name, email, password});
+        const token = generateToken(user._id);
         res.status(201).json({token, user: {id: user._id, name: user.name, email: user.email}});
     } catch (err){
         res.status(500).json({error: err.message});
