@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
-const studyRoomSchema = new mongoose.schema({
+const studyRoomSchema = new mongoose.Schema({
     name: {type: String, required: true},
     domain: {type: String, required: true},
     members: [{type: String}],
