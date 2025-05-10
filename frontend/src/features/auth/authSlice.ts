@@ -23,15 +23,20 @@ const authSlice = createSlice({
     name: "auth",
     initialState,
     reducers: {
-        loginStart(state){
+        loginStart(state: AuthState){
             state.loading = true;
             state.error = null;
         },
-        loginSuccess(state, action: PayloadAction<User>){
+        loginSuccess(state: AuthState, action: PayloadAction<User>){
+            state.loading = false;
+            state.user = action.payload;
+            state.error = null;
+        },
+        loginFailure(state: AuthState, action: PayloadAction<string>) {
             state.loading = false;
             state.error = action.payload;
         },
-        logout(state){
+        logout(state: AuthState){
             state.user= null;
         },
     },
