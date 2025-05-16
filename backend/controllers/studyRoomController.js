@@ -2,11 +2,21 @@ import studyRoom from "../models/studyRoom.js";
 
 export const createRoom = async(req, res) => {
     try{
-        const room = await studyRoom.create(req.body);
-        res.status(201).json(studyRoom);
+        const room = await studyRoom.create({...req.body, members: [req.user.id]});
+        res.status(201).json(room);
     } catch (err){
         console.error(err);
         res.status(400).json({err: err.message});
+    }
+};
+
+export const getMyRooms = async(req, res) => {
+    try{
+        const rooms = await studyRoom.find({members: req.user.id});
+        res.status(200).json(rooms);
+    } catch (err){
+        console.error(err);
+        res.status(500).json({message: "Failed to fetch rooms"});
     }
 };
 

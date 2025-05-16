@@ -1,12 +1,22 @@
 import React from 'react'
 import Navbar from '../components/Navbar'
 import RoomsList from '../components/RoomsList'
+import { useNavigate } from 'react-router-dom'
 
 const Dashboard = () => {
+    const navigate = useNavigate();
   return (
     <>
         <Navbar/>
-        <RoomsList/>
+        <div className="flex gap-5 p-10">
+            <div className="w-3/4">
+                <RoomsList/>
+            </div>
+            <div className="w-1/4">
+                <div></div>
+                <button className="bg-purple-500 text-white cursor-pointer p-3 rounded w-full" onClick={() => navigate('/add')}>Create new room</button>
+            </div>
+        </div>
     </>
   )
 }

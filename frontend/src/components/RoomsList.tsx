@@ -12,7 +12,14 @@ const RoomsList = () => {
         const fetchRooms = async() => {
             dispatch(fetchRoomsStart())
             try{
-                const response = await fetch('/api/rooms');
+                const token = localStorage.getItem('token')
+                const response = await fetch('http://localhost:5000/api/rooms/myrooms', {
+                    method: "GET",
+                    headers: {
+                        'Content-Type':'application/json',
+                        'Authorization':`Bearer ${token}`
+                    },
+                });
                 const data = await response.json();
                 dispatch(fetchRoomsSuccess(data))
             } catch (err) {
@@ -27,12 +34,12 @@ const RoomsList = () => {
 
   return (
     <div>
-        <h2 className="">Available Rooms</h2>
+        <h2 className="text-2xl font-bold mb-5">My Rooms</h2>
         <ul>
             {rooms.map(room => (
-                <li key={room.id} className="">
-                    <h3 className="">{room.name}</h3>
-                    <p>{room.description}</p>
+                <li key={room.id} className="border rounded-lg p-2 w-1/4">
+                    <h3 className=""><span className="font-bold">Study Room: </span>{room.name}</h3>
+                    <p><span className="font-bold">Description: </span>{room.description}</p>
                 </li>
             ))}
         </ul>

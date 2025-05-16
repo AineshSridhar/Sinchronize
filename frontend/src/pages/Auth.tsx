@@ -36,6 +36,8 @@ const Auth = () => {
             console.log('Response:', data);
             if (res.ok){
                 navigate('/dashboard');
+                localStorage.setItem("token", data.token);
+
             } else {
                 login ? alert(data.message || 'Login failed') : alert(data.message || 'Registration failed');
             }
