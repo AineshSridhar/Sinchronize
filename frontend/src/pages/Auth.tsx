@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {useNavigate} from "react-router-dom";
 
 const Auth = () => {
@@ -8,6 +8,13 @@ const Auth = () => {
         username: '',
         password: '',
         email: '',
+    })
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if(token){
+            navigate('/dashboard');
+        }
     })
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +54,7 @@ const Auth = () => {
     }
 
 return (
-    <div className="flex justify-center items-center bg-gray-200">
+    <div className="flex justify-center items-center bg-purple-300">
     <div className="flex h-screen border rounded-2xl overflow-hidden bg-white">
         <div className="w-1/2">
             <img className="h-full w-full object-cover border" src="/group-photo-scaled.jpeg" alt="group"/>

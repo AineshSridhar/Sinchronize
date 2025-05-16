@@ -3,8 +3,10 @@ import { useDispatch } from 'react-redux'
 import {RootState} from "../app/store.ts"
 import { useSelector } from 'react-redux';
 import { fetchRoomsFailure, fetchRoomsStart, fetchRoomsSuccess } from '../features/rooms/roomSlice';
+import { useNavigate } from 'react-router-dom';
 
 const RoomsList = () => {
+    const navigate = useNavigate();
     const dispatch = useDispatch();
     const {rooms, loading, error} = useSelector((state: RootState) => state.rooms)
 
@@ -21,6 +23,7 @@ const RoomsList = () => {
                     },
                 });
                 const data = await response.json();
+                console.log(data);
                 dispatch(fetchRoomsSuccess(data))
             } catch (err) {
                 dispatch(fetchRoomsFailure('Failed to fetch rooms'))
@@ -35,14 +38,15 @@ const RoomsList = () => {
   return (
     <div>
         <h2 className="text-2xl font-bold mb-5">My Rooms</h2>
-        <ul>
+        <div className="flex gap-4">
             {rooms.map(room => (
-                <li key={room.id} className="border rounded-lg p-2 w-1/4">
-                    <h3 className=""><span className="font-bold">Study Room: </span>{room.name}</h3>
-                    <p><span className="font-bold">Description: </span>{room.description}</p>
-                </li>
+                <div key={room.id} onClick={() => navigate(`/rooms/${room._id}`)} className="border border-purple-500 border-2 cursor-pointer rounded-lg p-3 w-1/2 text-left">
+                        <h3 className="mb-1 font-bold"><span className="text-purple-500">Study Room: </span>{room.name}</h3>
+                        <p><span className="font-bold">Description: </span>{room.description}</p>
+                        <p><span className="font-bold">Members: </span>{room.members.length}</p>
+                </div>
             ))}
-        </ul>
+        </div>  
     </div>
   )
 }
