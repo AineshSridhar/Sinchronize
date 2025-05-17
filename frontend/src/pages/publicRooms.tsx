@@ -25,6 +25,7 @@ const publicRooms = () => {
   return (
     <div>
       <h2 className="text-2xl font-bold text-purple-500">Let's get going!</h2>
+      
     </div>
   )
 }

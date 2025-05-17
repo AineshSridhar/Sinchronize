@@ -55,9 +55,9 @@ const Auth = () => {
 
 return (
     <div className="flex justify-center items-center bg-purple-300">
-    <div className="flex h-screen border rounded-2xl overflow-hidden bg-white">
+    <div className="flex h-screen rounded-2xl overflow-hidden bg-white">
         <div className="w-1/2">
-            <img className="h-full w-full object-cover border" src="/group-photo-scaled.jpeg" alt="group"/>
+            <img className="h-full w-full object-cover" src="/group-photo-scaled.jpeg" alt="group"/>
         </div>
         <div className="w-1/2 flex flex-col px-10 py-20">
             <div className="w-full flex mb-10">                    

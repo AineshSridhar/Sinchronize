@@ -15,7 +15,7 @@ const Dashboard = () => {
             </div>
             <div className="w-1/4">
                 <div><UserCard/></div>
-                <button className="bg-purple-500 text-white cursor-pointer p-3 rounded w-full" onClick={() => navigate('/add')}>Create new room</button>
+                <button className="bg-purple-500 text-white cursor-pointer mt-4 p-3 rounded w-full" onClick={() => navigate('/add')}>Create new room</button>
             </div>
         </div>
     </>
