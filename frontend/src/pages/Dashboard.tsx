@@ -1,5 +1,4 @@
 import React from 'react'
-import Navbar from '../components/Navbar'
 import RoomsList from '../components/RoomsList'
 import { useNavigate } from 'react-router-dom'
 import UserCard from '../components/UserCard'
@@ -8,7 +7,6 @@ const Dashboard = () => {
     const navigate = useNavigate();
   return (
     <>
-        <Navbar/>
         <div className="flex gap-5 p-10">
             <div className="w-3/4">
                 <RoomsList/>
