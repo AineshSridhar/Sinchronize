@@ -23,6 +23,7 @@ const Navbar = () => {
         }`}>
             <h3 className="text-xl font-semibold text-white mb-6">Menu</h3>
             <ul className="space-y-4 text-white text-lg">
+                <li className="cursor-pointer hover:underline" onClick={() => navigate('/dashboard')}>Dashboard</li>
                 <li className="cursor-pointer hover:underline" onClick={() => navigate('/public-rooms')}>Public Rooms</li>
                 <li className="cursor-pointer hover:underline" onClick={() => navigate('/join-room')}>Join Private Rooms</li>
                 <li className="cursor-pointer hover:underline" onClick={() => navigate('/statistics')}>Statistics</li>

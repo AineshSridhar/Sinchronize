@@ -10,12 +10,14 @@ interface Room {
 
 interface RoomsState{
     rooms: Room[];
+    currentRoom: Room | null,
     loading: boolean;
     error: string | null;
 }
 
 const initialState: RoomsState = {
     rooms: [],
+    currentRoom: null,
     loading: false,
     error: null,
 }
@@ -39,8 +41,11 @@ const roomSlice = createSlice({
         addRoom(state: RoomsState, action: PayloadAction<Room>){
             state.rooms.push(action.payload);
         },
+        clearCurrentRoom(state: RoomsState){
+            state.currentRoom = null;
+        }
     },
 });
 
-export const {fetchRoomsStart, fetchRoomsSuccess, fetchRoomsFailure, addRoom} = roomSlice.actions;
+export const {fetchRoomsStart, fetchRoomsSuccess, fetchRoomsFailure, addRoom, clearCurrentRoom} = roomSlice.actions;
 export default roomSlice.reducer;

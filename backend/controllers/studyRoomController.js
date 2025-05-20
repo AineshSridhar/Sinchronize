@@ -1,11 +1,23 @@
+import mongoose from "mongoose";
 import studyRoom from "../models/studyRoom.js";
 import UserRoomActivity from "../models/UserRoomActivity.js";
 
 export const createRoom = async(req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try{
-        const room = await studyRoom.create({...req.body, members: [req.user._id]});
-        res.status(201).json(room);
+        const room = await studyRoom.create([{...req.body, members: [req.user._id]}], {session});
+        const roomActivity = await UserRoomActivity.create([{userId: req.user._id, roomId: room[0]._id}], {session});
+
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(201).json({room: room[0], roomActivity});
     } catch (err){
+        await session.abortTransaction();
+        session.endSession();
+
         console.error(err);
         res.status(400).json({err: err.message});
     }
@@ -25,7 +37,7 @@ export const getRoomDetails = async(req, res) => {
     try{
         const roomId = req.params.id;
         const response = await UserRoomActivity.find({roomId});
-        res.status(200).json(activity);
+        res.status(200).json(response);
     } catch (err) {
         res.status(500).json({error: "Failed to fetch room activity"});
     }
