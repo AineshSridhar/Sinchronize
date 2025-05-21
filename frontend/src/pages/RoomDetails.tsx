@@ -45,15 +45,19 @@ const RoomDetails = () => {
 
   return (
     <div className="p-5">
-      <h1>Room: {room._id}</h1>
-      <p>Desc: {room.description}</p>
-      <p>Members: {room.members?.length || 0}</p>
-      <h2>Students in the Room:</h2>
-        <div className="flex border pl-2">
+        <div >
+      <h1 className="text-xl text-purple-900"><span className="font-bold">Room: </span>{room.name}</h1>
+      <p className="text-xl"><span className="font-bold">Desc: </span>{room.description}</p>
+      <p className="text-xl mb-3"><span className="font-bold">Members: </span>{room.members?.length || 0}</p>
+      </div>
+      <h2 className="text-xl mb-4">Users in the Room:</h2>
+        <div className="w-1/4 border pl-2">
             {students.map(student => {
                 return (<div key={student._id}>
-                    User ID: {student.userId}, Time studied: {student.timeStudied} mins,
-                    Questions Solved: {student.questionsSolved}, Streak: {student.streak}
+                    <div>User: {student.userId}</div>
+                    <div>Time studied: {student.timeStudied} mins</div>
+                    <div>Questions Solved: {student.questionsSolved}</div>
+                    <div>Streak: {student.streak}</div>
                 </div>
                 );
             })}

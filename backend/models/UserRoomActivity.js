@@ -3,9 +3,12 @@ import mongoose from 'mongoose';
 const userRoomActivitySchema = new mongoose.Schema({
     userId: {type: mongoose.Schema.Types.ObjectId, ref: "User", required:true},
     roomId: {type: mongoose.Schema.Types.ObjectId, ref: "StudyRoom", required: true},
-    timeStudied: {type: Number, default: 0},
+    timeStudiedHistory: [{
+        date: {type: String},
+        duration: {type: Number, default: 0}    
+    }],
+    currentSessionStart: {type:Date, default: null},
     questionsSolved: {type: Number, default: 0},
-    lastActive: {type: Date, default: Date.now()},
     streak: {type: Number, default: 0}
 });
 
