@@ -1,38 +1,52 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import {io} from 'socket.io-client';
 
-const TimerFooter = () => {
-    const [running, setRunning] = useState(false);
-    const [seconds, setSeconds] = useState(0);
-    const socket = useSocket();
+const socket = io('http://localhost:5000');
+
+const TimerFooter = ({roomId, userId} : {roomId: string; userId: string}) => {
+    const [isRunning, setIsRunning] = useState(false);
+    const [time, setTime] = useState(0);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        socket.emit('joinRoom', roomId)
+        socket.on('timerUpdate', (data) => {
+            setIsRunning(data.isRunning);
+            setTime(data.time);
+        });
+        return () => {
+            socket.disconnect();
+        };
+    }, [roomId]);
 
-        if(running) {
-            interval = setInterval(() => {
-                setSeconds(prev => prev + 1);
+    useEffect(() => {
+        if(isRunning){
+            intervalRef.current = setInterval(() => {
+                setTime((prev) => prev + 1);
             }, 1000);
+        } else {
+            if (intervalRef.current) clearInterval(intervalRef.current);
         }
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+     }, [isRunning])
 
-        return () => clearInterval(interval);
-    }, [running]);
-
-    const startTimer = () => {
-        setRunning(true);
-        socket.emit('startTimer', {roomId});
+    const handleToggle = () => {
+        const newRunningState = !isRunning;
+        setIsRunning(newRunningState);
+        socket.emit('toggleTimer', {roomId, isRunning: newRunningState, time});
     };
 
-    const pauseTimer = () => {
-        setRunning(false);
-        socket.emit('pauseTimer', {roomId, seconds});
+    const formatTime = (s: number) => {
+        const minutes = Math.floor(s/60);
+        const seconds = s % 60;
+        return `${minutes}m ${seconds}s`;
     }
-
   return (
     <div>
-        <div>Study Timer: {Math.floor(seconds/60)} : {seconds % 60}</div>
-        <button onClick={running ? pauseTimer : startTimer}>
-            {running ? 'Pause' : 'Start'}
-        </button>
+      <div>Study Time: {formatTime(time)}</div>
+      <button onClick={handleToggle}>{isRunning ? 'Pause' : 'Start' }</button>
     </div>
   )
 }

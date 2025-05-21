@@ -1,3 +1,4 @@
+import { useImperativeHandle } from "react";
 import UserRoomActivity from "../models/UserRoomActivity.js";
 
 export const getUsers = async(req, res) => {
@@ -10,4 +11,14 @@ export const getUsers = async(req, res) => {
         console.error(err);
         res.status(500).json({message: "Failed to fetch students"});
     }
+};
+
+export const updateUserTime = async(userId, roomId, timeInSec) => {
+    const dateKey = new Date().toISOString().slice(0, 10);
+    const minutes = Math.floor(timeInSec/60);
+    await UserRoomActivity.updateOne(
+        {userId, roomId},
+        {$inc: {[`dailyStudy.${dateKey}`]: minutes, timeStudied: minutes}},
+        {upsert: true}
+    );
 };
