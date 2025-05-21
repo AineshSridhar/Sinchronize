@@ -1,57 +1,63 @@
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import { useParams } from 'react-router-dom'
-import { fetchRoomsStart, fetchRoomsSuccess, fetchRoomsFailure } from '../features/rooms/roomSlice';
+import { useLocation } from 'react-router-dom'
+import studentSlice, { fetchStudentsStart, fetchStudentsFailure, fetchStudentsSuccess } from '../features/students/studentSlice';
 import {RootState} from "../app/store"
 
-interface Room {
-    _id: string;
-    name: string;
-    description: string;
-    members: string[];
-}
-
 const RoomDetails = () => {
-    const {id} = useParams<{id: string}>();
     const dispatch = useDispatch();
-    const {currentRoom: room, loading, error} = useSelector((state: RootState) => state.rooms);
+    const location = useLocation();
+    const room = location.state?.room;
+    const {students, loading, error} = useSelector((state:RootState) => state.students);
+
+    if (!room) return <p>No room data provided</p>;
 
     useEffect(() => {
-        const fetchRoom = async() => {
-            dispatch(fetchRoomsStart());
-            try{    
-                const token = localStorage.getItem('token')
-                const response = await fetch(`http://localhost:5000/api/rooms/${id}`, {
+        if(!room) return;
+
+        const fetchStudents = async() => {
+            dispatch(fetchStudentsStart());
+            try{
+                const token = localStorage.getItem('token');
+                const response = await fetch (`http://localhost:5000/api/rooms/${room._id}/students`,{
                     method: "GET",
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                    headers:{
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                    },
+                })
 
-                if (!response.ok){
-                    throw new Error("Failed to fetch room details");
-                }
+                if(!response.ok) throw new Error('Failed to fetch students');
                 const data = await response.json();
-                console.log(data); 
-                dispatch(fetchRoomsSuccess(data));               
+                console.log(data);
+                dispatch(fetchStudentsSuccess(data));
             } catch (err){
-                dispatch(fetchRoomsFailure((err as Error).message)) 
+                console.error(err);
+                dispatch(fetchStudentsFailure((err as Error).message));
             }
-        };
-                
-        fetchRoom();
-    }, [dispatch, id]);
+        }
+        fetchStudents();
+    }, [room, dispatch]);
 
+    if (!room) return <p>No room data provided</p>;
+    if (loading) return <p>Loading students...</p>;
     if (error) return <p>Error: {error}</p>
-    if (!room) return <p>Loading...</p>
 
   return (
-    <div>
-        
-      <h1>Room: {room.name}</h1>
+    <div className="p-5">
+      <h1>Room: {room._id}</h1>
       <p>Desc: {room.description}</p>
       <p>Members: {room.members?.length || 0}</p>
+      <h2>Students in the Room:</h2>
+        <div className="flex border pl-2">
+            {students.map(student => {
+                return (<div key={student._id}>
+                    User ID: {student.userId}, Time studied: {student.timeStudied} mins,
+                    Questions Solved: {student.questionsSolved}, Streak: {student.streak}
+                </div>
+                );
+            })}
+        </div>
     </div>
   )
 }

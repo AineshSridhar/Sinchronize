@@ -1,5 +1,6 @@
 import express from 'express';
-import {createRoom, getMyRooms, getRoomDetails, getRooms, joinRoom} from "../controllers/studyRoomController.js";
+import {createRoom, getMyRooms, getRoom, getRooms, joinRoom} from "../controllers/studyRoomController.js";
+import {getUsers} from '../controllers/studentController.js'
 import {protect} from "../middleware/authMiddleware.js"
 
 const router = express.Router();
@@ -7,7 +8,8 @@ const router = express.Router();
 router.post('/', protect, createRoom);
 router.get('/', protect, getRooms);
 router.get('/myrooms', protect, getMyRooms);
-router.get('/:id', protect, getRoomDetails);
+router.get('/info/:id', protect, getRoom);
+router.get('/:id/students', protect, getUsers);
 router.put('/:roomId/join', protect, joinRoom);
 
 export default router;

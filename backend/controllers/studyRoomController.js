@@ -33,11 +33,11 @@ export const getMyRooms = async(req, res) => {
     }
 };
 
-export const getRoomDetails = async(req, res) => {
+export const getRoom = async(req, res) => {
     try{
-        const roomId = req.params.id;
-        const response = await UserRoomActivity.find({roomId});
-        res.status(200).json(response);
+        const {id} = req.params;
+        const students = await studyRoom.find({roomId: id});
+        res.status(200).json(students);
     } catch (err) {
         res.status(500).json({error: "Failed to fetch room activity"});
     }

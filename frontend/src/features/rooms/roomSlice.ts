@@ -43,9 +43,14 @@ const roomSlice = createSlice({
         },
         clearCurrentRoom(state: RoomsState){
             state.currentRoom = null;
+        },
+        setCurrentRoom(state, action: PayloadAction<Room>){
+            state.currentRoom = action.payload;
+            state.loading = false;
+            state.error = null;
         }
     },
 });
 
-export const {fetchRoomsStart, fetchRoomsSuccess, fetchRoomsFailure, addRoom, clearCurrentRoom} = roomSlice.actions;
+export const {fetchRoomsStart, fetchRoomsSuccess, fetchRoomsFailure, addRoom, clearCurrentRoom, setCurrentRoom} = roomSlice.actions;
 export default roomSlice.reducer;

@@ -40,7 +40,7 @@ const RoomsList = () => {
         <h2 className="text-2xl font-bold mb-5">My Rooms</h2>
         <div className="flex gap-4">
             {rooms.map(room => (
-                <div key={room.id} onClick={() => navigate(`/rooms/${room._id}`)} className="border border-purple-500 border-2 cursor-pointer rounded-lg p-3 w-1/2 text-left">
+                <div key={room.id} onClick={() => navigate(`/rooms/${room._id}`, { state: { room } })} className="border border-purple-500 border-2 cursor-pointer rounded-lg p-3 w-1/2 text-left">
                         <h3 className="mb-1 font-bold"><span className="text-purple-500">Study Room: </span>{room.name}</h3>
                         <p><span className="font-bold">Description: </span>{room.description}</p>
                         <p><span className="font-bold">Members: </span>{room.members.length}</p>
