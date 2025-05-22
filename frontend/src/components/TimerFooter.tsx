@@ -1,20 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {Play, Pause} from 'lucide-react';
-import { io } from 'socket.io-client';
+import socket from '../socket';
 
-const socket = io('http://localhost:5000');
+interface TimerFooterProps {
+    roomId: string;
+    userId: string;
+}
 
-const TimerFooter = ({ roomId, userId }: { roomId: string; userId: string }) => {
+const TimerFooter: React.FC<TimerFooterProps> = ({ roomId, userId }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<Date | null>(null);
 
   useEffect(() => {
+    socket.connect();
     socket.emit('joinRoom', { roomId, userId });
 
     return () => {
-      socket.disconnect();
+        socket.emit('leaveRoom', {roomId, userId});
+        socket.disconnect();
     };
   }, [roomId, userId]);
 
@@ -31,6 +36,7 @@ const TimerFooter = ({ roomId, userId }: { roomId: string; userId: string }) => 
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [isRunning]);
+
 
   const handleToggle = () => {
     if (isRunning) {

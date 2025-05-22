@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom'
-import studentSlice, { fetchStudentsStart, fetchStudentsFailure, fetchStudentsSuccess } from '../features/students/studentSlice';
+import { fetchStudentsStart, fetchStudentsFailure, fetchStudentsSuccess } from '../features/students/studentSlice';
 import {RootState} from "../app/store"
 import TimerFooter from '../components/TimerFooter';
+import socket from '../socket'; // import the socket instance
+
 
 interface Student {
   _id: string;
@@ -22,13 +24,29 @@ const RoomDetails = () => {
         loading: boolean;
         error: string | null;
     };
-    const userId = useSelector((state: RootState) => state.auth.user?.id); // adjust as per your auth slice
+    const userId = useSelector((state: RootState) => state.auth.user?.id);
+    console.log("Current User ID in RoomDetails:", userId);
+
 
 
     if (!room) return <p>No room data provided</p>;
 
+    useEffect(()=> {
+        if (!room || !userId) return;
+        if (!socket.connected){
+            socket.connect();
+        }
+        console.log("Emitting: ", {roomId: room._id, userId});
+        socket.emit('joinRoom', {roomId: room._id, userId});
+
+        return () => {
+            socket.emit('leaveRoom', {roomId: room._id, userId});
+            socket.disconnect();
+        }
+    }, [room, userId])
+
     useEffect(() => {
-        if(!room) return;
+        if (!room) return;
 
         const fetchStudents = async() => {
             dispatch(fetchStudentsStart());
@@ -56,10 +74,10 @@ const RoomDetails = () => {
 
     if (!room) return <p>No room data provided</p>;
     if (loading) return <p>Loading students...</p>;
-if (error) return <p className="text-red-500">Unable to load students. Please try again later.</p>;
+    if (error) return <p className="text-red-500">Unable to load students. Please try again later.</p>;
 
   return (
-    <div>
+    <>
     <div className="p-5">
         <div >
       <h1 className="text-xl text-purple-900"><span className="font-bold">Room: </span>{room.name}</h1>
@@ -80,7 +98,7 @@ if (error) return <p className="text-red-500">Unable to load students. Please tr
         </div>
     </div>
     <TimerFooter roomId ={room._id} userId={userId}/>
-    </div>
+    </>
   )
 }
 
