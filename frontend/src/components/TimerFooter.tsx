@@ -1,54 +1,67 @@
-import React, { useEffect, useRef, useState } from 'react'
-import {io} from 'socket.io-client';
+import React, { useEffect, useRef, useState } from 'react';
+import {Play, Pause} from 'lucide-react';
+import { io } from 'socket.io-client';
 
 const socket = io('http://localhost:5000');
 
-const TimerFooter = ({roomId, userId} : {roomId: string; userId: string}) => {
-    const [isRunning, setIsRunning] = useState(false);
-    const [time, setTime] = useState(0);
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+const TimerFooter = ({ roomId, userId }: { roomId: string; userId: string }) => {
+  const [isRunning, setIsRunning] = useState(false);
+  const [time, setTime] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<Date | null>(null);
 
-    useEffect(() => {
-        socket.emit('joinRoom', roomId)
-        socket.on('timerUpdate', (data) => {
-            setIsRunning(data.isRunning);
-            setTime(data.time);
-        });
-        return () => {
-            socket.disconnect();
-        };
-    }, [roomId]);
+  useEffect(() => {
+    socket.emit('joinRoom', { roomId, userId });
 
-    useEffect(() => {
-        if(isRunning){
-            intervalRef.current = setInterval(() => {
-                setTime((prev) => prev + 1);
-            }, 1000);
-        } else {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-        }
-        return () => {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-        };
-     }, [isRunning])
-
-    const handleToggle = () => {
-        const newRunningState = !isRunning;
-        setIsRunning(newRunningState);
-        socket.emit('toggleTimer', {roomId, isRunning: newRunningState, time});
+    return () => {
+      socket.disconnect();
     };
+  }, [roomId, userId]);
 
-    const formatTime = (s: number) => {
-        const minutes = Math.floor(s/60);
-        const seconds = s % 60;
-        return `${minutes}m ${seconds}s`;
+  useEffect(() => {
+    if (isRunning) {
+      intervalRef.current = setInterval(() => {
+        setTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current);
     }
-  return (
-    <div>
-      <div>Study Time: {formatTime(time)}</div>
-      <button onClick={handleToggle}>{isRunning ? 'Pause' : 'Start' }</button>
-    </div>
-  )
-}
 
-export default TimerFooter
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isRunning]);
+
+  const handleToggle = () => {
+    if (isRunning) {
+      const end = new Date().toISOString();
+      console.log(end);
+      console.log("Emitting stopTimer", { roomId, userId, end });
+      socket.emit('stopTimer', { roomId, userId, end });
+    } else {
+      const start = new Date().toISOString();
+      startTimeRef.current = new Date(start);
+      socket.emit('startTimer', { roomId, userId, start });
+    }
+    setIsRunning(prev => !prev);
+  };
+
+  const formatTime = (s: number) => {
+    const hours = Math.floor(s/3600)
+    const minutes = Math.floor((s % 3600)/60);
+    const seconds = s % 60;
+    return `${hours}h ${minutes}m ${seconds}s`;
+  };
+
+  return (
+    <div className="fixed bottom-0 left-0 w-full p-4 bg-purple-900 border-t flex justify-center gap-4 items-center text-white">
+      <button onClick={handleToggle} className="text-white p-2 border border-white border-2 rounded-full mt-2">
+        {isRunning ? <Pause className="w-4 h-4"/> : <Play className="w-4 h-4"/>}
+      </button >
+            <div className="text-3xl">{formatTime(time)}</div>
+      <hr className="my-4" />
+    </div>
+  );
+};
+
+export default TimerFooter;

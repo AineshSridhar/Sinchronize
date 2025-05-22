@@ -3,12 +3,27 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom'
 import studentSlice, { fetchStudentsStart, fetchStudentsFailure, fetchStudentsSuccess } from '../features/students/studentSlice';
 import {RootState} from "../app/store"
+import TimerFooter from '../components/TimerFooter';
+
+interface Student {
+  _id: string;
+  userId: string;
+  timeStudied: number;
+  questionsSolved: number;
+  streak: number;
+}
 
 const RoomDetails = () => {
     const dispatch = useDispatch();
     const location = useLocation();
     const room = location.state?.room;
-    const {students, loading, error} = useSelector((state:RootState) => state.students);
+    const {students, loading, error} = useSelector((state:RootState) => state.students) as {
+          students: Student[];
+        loading: boolean;
+        error: string | null;
+    };
+    const userId = useSelector((state: RootState) => state.auth.user?.id); // adjust as per your auth slice
+
 
     if (!room) return <p>No room data provided</p>;
 
@@ -41,17 +56,18 @@ const RoomDetails = () => {
 
     if (!room) return <p>No room data provided</p>;
     if (loading) return <p>Loading students...</p>;
-    if (error) return <p>Error: {error}</p>
+if (error) return <p className="text-red-500">Unable to load students. Please try again later.</p>;
 
   return (
+    <div>
     <div className="p-5">
         <div >
       <h1 className="text-xl text-purple-900"><span className="font-bold">Room: </span>{room.name}</h1>
-      <p className="text-xl"><span className="font-bold">Desc: </span>{room.description}</p>
-      <p className="text-xl mb-3"><span className="font-bold">Members: </span>{room.members?.length || 0}</p>
+      <p className="text-xl text-purple-900"><span className="font-bold">Desc: </span>{room.description}</p>
+      <p className="text-xl text-purple-900 mb-3"><span className="font-bold">Members: </span>{room.members?.length || 0}</p>
       </div>
       <h2 className="text-xl mb-4">Users in the Room:</h2>
-        <div className="w-1/4 border pl-2">
+        <div className="w-1/4 border border-purple-700 border-3 pl-2 rounded">
             {students.map(student => {
                 return (<div key={student._id}>
                     <div>User: {student.userId}</div>
@@ -62,6 +78,8 @@ const RoomDetails = () => {
                 );
             })}
         </div>
+    </div>
+    <TimerFooter roomId ={room._id} userId={userId}/>
     </div>
   )
 }

@@ -10,7 +10,7 @@ const Navbar = () => {
         navigate('/auth');
     }
   return (
-    <div className="relative">
+    <div className="relative shadow-md shadow--purple-900">
         <div className="flex-1 p-4 text0-white">
             <h2 className='font-bold text-2xl text-purple-500'>Sinchronize</h2>
         </div>

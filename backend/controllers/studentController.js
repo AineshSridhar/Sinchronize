@@ -13,12 +13,27 @@ export const getUsers = async(req, res) => {
     }
 };
 
-export const updateUserTime = async(userId, roomId, timeInSec) => {
-    const dateKey = new Date().toISOString().slice(0, 10);
-    const minutes = Math.floor(timeInSec/60);
-    await UserRoomActivity.updateOne(
-        {userId, roomId},
-        {$inc: {[`dailyStudy.${dateKey}`]: minutes, timeStudied: minutes}},
-        {upsert: true}
-    );
+export const saveUserStudySession = async (userId, roomId, start, end, duration) => {
+  const today = new Date().toISOString().split('T')[0];
+  const session = { start, end, duration };
+  console.log("darshan dediye apne");
+  const userActivity = await UserRoomActivity.findOne({ userId, roomId });
+
+  if (!userActivity) {
+    console.log("It detect not present, will create")
+    await UserRoomActivity.create({
+      userId,
+      roomId,
+      timeStudiedHistory: [{ date: today, sessions: [session] }]
+    });
+  } else {
+    let history = userActivity.timeStudiedHistory;
+    const existingDay = history.find(d => d.date === today);
+    if (existingDay) {
+      existingDay.sessions.push(session);
+    } else {
+      history.push({ date: today, sessions: [session] });
+    }
+    await userActivity.save();
+  }
 };

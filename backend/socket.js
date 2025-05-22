@@ -1,31 +1,44 @@
-const {Server} = require('socket.io');
-const {updateUserTime} = require('./controllers/studentController');
+import { Server } from 'socket.io';
+import { saveUserStudySession } from './controllers/studentController.js';
 
 const setupSocket = (server) => {
-    const io = new Server(server, {
-        cors: {origin: "*"},
+  const io = new Server(server, { cors: { origin: "*" } });
+
+  const userTimers = {}; // { roomId: { userId: { start: Date } } }
+
+  io.on('connection', (socket) => {
+    console.log("Connected to socket server", socket.id);
+    socket.on('joinRoom', ({ roomId, userId }) => {
+      socket.join(roomId);
+      socket.to(roomId).emit('userJoined', userId);
     });
 
-    const roomTimers = {};
+    socket.on('startTimer', ({ roomId, userId, start }) => {
+      userTimers[roomId] = userTimers[roomId] || {};
+      userTimers[roomId][userId] = { start: new Date(start) };
 
-    io.on('connection', (socket) => {
-        socket.on('joinRoom', (roomId) => {
-            socket.join(roomId);
-            const state = roomTimers[roomId] || {time: 0, isRunning: false};
-            socket.emit ('timerUpdate', state);
-        });
-
-        socket.on('toggleTimer', async({roomId, isRunning, time}) => {
-            roomTimers[roomId] = {time, isRunning};
-            io.to(roomId).emit('timerUpdate', {time, isRunning});
-
-            if(!isRunning){
-                const userId = socket.handshake.auth.userId;
-                if (userId) await updateUserTime(userId, roomId, time);
-            }
-        });
-
-        socket.on('disconnect', () => {});
+      // Broadcast to others
+      socket.to(roomId).emit('userTimerStarted', { userId, start });
     });
+
+    socket.on('stopTimer', async ({ roomId, userId, end }) => {
+      console.log("Stopped timer");
+      const session = userTimers[roomId]?.[userId];
+      if (session && session.start) {
+        const start = session.start;
+        const duration = Math.floor((new Date(end) - start) / 60000); // mins
+
+        // Clear from memory
+        delete userTimers[roomId][userId];
+
+        // Save to DB
+        await saveUserStudySession(userId, roomId, start, end, duration);
+
+        // Notify room
+        io.to(roomId).emit('userTimerStopped', { userId, end, duration });
+      }
+    });
+  });
 };
-module.exports = setupSocket;
+
+export default setupSocket;

@@ -11,5 +11,6 @@ router.get('/myrooms', protect, getMyRooms);
 router.get('/info/:id', protect, getRoom);
 router.get('/:id/students', protect, getUsers);
 router.put('/:roomId/join', protect, joinRoom);
+// router.put('/:roomId/start-session')
 
 export default router;

@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
+import { RootState } from '../app/store';
 import {useNavigate} from "react-router-dom";
+import { loginStart, loginSuccess, loginFailure } from '../features/auth/authSlice';
 
 const Auth = () => {
     const navigate = useNavigate()
+    const dispatch = useDispatch();
+    const {user, loading, error} = useSelector((state: RootState) => state.auth);
+    
     const [login, setLogin] = useState(true);
     const [formData, setFormData] = useState({
         username: '',
@@ -11,11 +18,10 @@ const Auth = () => {
     })
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if(token){
+        if (user || localStorage.getItem('token')){
             navigate('/dashboard');
         }
-    })
+    }, [user, navigate]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -31,6 +37,7 @@ const Auth = () => {
         const payload = login ? {email: formData.email, password: formData.password}: formData;
 
         try{
+            dispatch(loginStart());
             const res = await fetch(url, {
                 method: "POST",
                 headers: {
@@ -42,14 +49,21 @@ const Auth = () => {
             const data = await res.json();
             console.log('Response:', data);
             if (res.ok){
+                const userData = {
+                    id: data.user.id,
+                    name: data.user.username,
+                    email: data.user.email,
+                    token: data.token,
+                };
+                localStorage.setItem('token', data.token);
+                dispatch(loginSuccess(userData));
                 navigate('/dashboard');
-                localStorage.setItem("token", data.token);
-
             } else {
-                login ? alert(data.message || 'Login failed') : alert(data.message || 'Registration failed');
+                dispatch(loginFailure(data.message || 'Authentication failed'));
             }
         } catch (err){
             console.error('Error', err);
+            dispatch(loginFailure("Something went wrong"));
         }
     }
 
