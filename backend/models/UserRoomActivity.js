@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const userRoomActivitySchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
   roomId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "StudyRoom",

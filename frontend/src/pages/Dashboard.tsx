@@ -1,10 +1,16 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import RoomsList from '../components/RoomsList'
 import { useNavigate } from 'react-router-dom'
 import UserCard from '../components/UserCard'
 
 const Dashboard = () => {
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!localStorage.getItem('token')){
+            navigate('/auth');
+        }
+    })
   return (
     <>
         <div className="flex gap-5 p-10">

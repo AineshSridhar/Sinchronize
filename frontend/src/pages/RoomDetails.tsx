@@ -20,14 +20,12 @@ const RoomDetails = () => {
     const location = useLocation();
     const room = location.state?.room;
     const {students, loading, error} = useSelector((state:RootState) => state.students) as {
-          students: Student[];
+        students: Student[];
         loading: boolean;
         error: string | null;
     };
     const userId = useSelector((state: RootState) => state.auth.user?.id);
     console.log("Current User ID in RoomDetails:", userId);
-
-
 
     if (!room) return <p>No room data provided</p>;
 
@@ -84,13 +82,13 @@ const RoomDetails = () => {
       <p className="text-xl text-purple-900"><span className="font-bold">Desc: </span>{room.description}</p>
       <p className="text-xl text-purple-900 mb-3"><span className="font-bold">Members: </span>{room.members?.length || 0}</p>
       </div>
-      <h2 className="text-xl mb-4">Users in the Room:</h2>
-        <div className="w-1/4 border border-purple-700 border-3 pl-2 rounded">
+      <h2 className="text-center text-xl font-bold mb-4">Users</h2>
+        <div className="flex flex-wrap gap-5">
             {students.map(student => {
-                return (<div key={student._id}>
-                    <div>User: {student.userId}</div>
-                    <div>Time studied: {student.timeStudied} mins</div>
-                    <div>Questions Solved: {student.questionsSolved}</div>
+                return (<div key={student._id} className="w-1/4 border border-purple-700 border-3 p-4 rounded">
+                    <div>Name: {student.userId?.name || 'Unknown'}</div>
+                    <div>Time studied: {student.timeStudied || 100} mins</div>
+                    {/* <div>Questions Solved: {student.questionsSolved}</div> */}
                     <div>Streak: {student.streak}</div>
                 </div>
                 );

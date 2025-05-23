@@ -8,15 +8,18 @@ import RoomDetails from './pages/RoomDetails'
 import PublicRooms from './pages/publicRooms'
 import JoinPrivate from './pages/JoinPrivate'
 import LandingPage from './pages/LandingPage'
-
+import BackgroundTriangles from "./components/BackgroundTriangles";
 
 function App() {
   const location = useLocation();
   const hideNavbar = location.pathname === "/auth";
+  const isAuthPage = location.pathname === "/auth";
 
   return (
     <>
       {!hideNavbar && <Navbar/>}
+      {!isAuthPage && <BackgroundTriangles />}
+
       <Routes>
         <Route path="/" element={<LandingPage/>}/>
         <Route path="/dashboard" element={<Dashboard/>}/>

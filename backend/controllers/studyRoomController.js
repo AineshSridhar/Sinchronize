@@ -58,16 +58,37 @@ export const getRooms = async(req, res) => {
 };
 
 export const joinRoom = async(req, res) => {
+    console.log("Received");
     try{
-        const {roomId} = req.params;
-        const {member} = req.body;
+        const {roomId} = req.params
+        const userId = req.user.id;
+        const room = await studyRoom.findOne({_id: roomId});
+
+        if(!room){
+            console.error("Could not find room");
+            return res.status(404).json({message: "Room not found"});
+        }
+
+        if (!room.members.includes(userId)){
+            room.members.push(userId);
+            await room.save();
+            console.log("Added to members")
+        }
+
+        const existingActivity = await UserRoomActivity.findOne({userId, roomId: room._id});
+        if(!existingActivity){
+            await UserRoomActivity.create({userId, roomId: room._id, dailyTime: [],})
+        }
+
+        res.status(200).json({message: "Added user"});
+
     } catch (err){
-        
+        console.error(err);
+        res.status(500).json({message: "Something went wrong"});
     }
 }
 
 export const joinPrivateRoom = async(req, res) => {
-    console.log("Received");
     const {code} = req.body;
     try{
         const room = await studyRoom.findOne({code, type:"private"});
