@@ -7,7 +7,7 @@ export const createRoom = async(req, res) => {
     session.startTransaction();
 
     try{
-        const room = await studyRoom.create([{...req.body, members: [req.user._id]}], {session});
+        const room = await studyRoom.create([{...req.body, members: [req.user._id], admins: [req.user._id]}], {session});
         const roomActivity = await UserRoomActivity.create([{userId: req.user._id, roomId: room[0]._id}], {session});
 
         await session.commitTransaction();
@@ -45,7 +45,11 @@ export const getRoom = async(req, res) => {
 
 export const getRooms = async(req, res) => {
     try{
-        const rooms = await studyRoom.find();
+        const rooms = await studyRoom.find({
+            members: { $ne: req.user._id}, 
+            type: "public",
+        }).lean();
+        console.log(rooms);
         res.json(rooms);
     } catch (err){
         console.error(err);
@@ -59,5 +63,35 @@ export const joinRoom = async(req, res) => {
         const {member} = req.body;
     } catch (err){
         
+    }
+}
+
+export const joinPrivateRoom = async(req, res) => {
+    console.log("Received");
+    const {code} = req.body;
+    try{
+        const room = await studyRoom.findOne({code, type:"private"});
+        
+        if (!room){
+            console.error("Invalid code");
+            return res.status(404).json({message: "Invalid room code"});
+        }
+        
+        const userId = req.user.id;
+        if (!room.members.includes(userId)){
+            room.members.push(userId);
+            await room.save();
+        }
+
+        const existingActivity = await UserRoomActivity.findOne({userId, roomId: room._id});
+        if(!existingActivity){
+            await UserRoomActivity.create({userId, roomId: room._id, dailyTime: [],})
+        }
+
+        res.status(200).json({room: room});
+
+    } catch (err){
+        console.error(err);
+        res.status(500).json({message: "Something went wrong"});
     }
 }

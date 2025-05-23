@@ -1,13 +1,20 @@
 import React, { useState } from 'react'
+import { useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom'
+import { RootState } from '../app/store';
+import { logout as logoutAction } from '../features/auth/authSlice';
 
 const Navbar = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const user = useSelector((state: RootState) => state.auth.user);
     const [isOpen, setIsOpen] = useState(false);
 
     const logout = () => {
         localStorage.removeItem('token');
-        navigate('/auth');
+        dispatch(logoutAction())
+        navigate('/');
     }
   return (
     <div className="relative shadow-md shadow--purple-900">
@@ -15,6 +22,8 @@ const Navbar = () => {
             <h2 className='font-bold text-2xl text-purple-500'>Sinchronize</h2>
         </div>
 
+        {user? (
+            <>
         <button onClick={() => setIsOpen(!isOpen)} className={`fixed cursor-pointer text-2xl top-3 right-4 z-50 px-4 py-2 ${isOpen?'text-white':''}`}>
             {isOpen?'✕':'☰'}
         </button>
@@ -25,11 +34,15 @@ const Navbar = () => {
             <ul className="space-y-4 text-white text-lg">
                 <li className="cursor-pointer hover:underline" onClick={() => navigate('/dashboard')}>Dashboard</li>
                 <li className="cursor-pointer hover:underline" onClick={() => navigate('/public-rooms')}>Public Rooms</li>
-                <li className="cursor-pointer hover:underline" onClick={() => navigate('/join-room')}>Join Private Rooms</li>
+                <li className="cursor-pointer hover:underline" onClick={() => navigate('/join-private')}>Join Private Rooms</li>
                 <li className="cursor-pointer hover:underline" onClick={() => navigate('/statistics')}>Statistics</li>
                 <li className="cursor-pointer hover:underline" onClick={logout}>Logout</li>
             </ul>
         </div>
+        </>
+        ):(
+            <button onClick={() => navigate('auth')} className="fixed top-3 right-4 px-4 py-2 cursor-pointer bg-purple-500 text-white rounded">Login</button>
+        )}
     </div>
   )
 }

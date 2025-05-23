@@ -12,7 +12,7 @@ const Auth = () => {
     
     const [login, setLogin] = useState(true);
     const [formData, setFormData] = useState({
-        username: '',
+        name: '',
         password: '',
         email: '',
     })
@@ -51,7 +51,7 @@ const Auth = () => {
             if (res.ok){
                 const userData = {
                     id: data.user.id,
-                    name: data.user.username,
+                    name: data.user.name,
                     email: data.user.email,
                     token: data.token,
                 };
@@ -92,7 +92,7 @@ return (
                     {!login && (
                         <div>
                             <label className="block mb-1">Username</label>
-                            <input type="text" name="username" value={formData.email} onChange={handleChange} className="w-full border p-2 rounded" placeholder="Enter your username"/>
+                            <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full border p-2 rounded" placeholder="Enter your username"/>
                         </div>
                     )}
                     <button type='submit' className="w-full bg-purple-500 text-white py-2 rounded cursor-pointer hover:bg-purple-700">{login ? 'Login' : 'Register' }</button>

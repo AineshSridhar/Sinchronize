@@ -34,7 +34,7 @@ const AddRoom = () => {
             if (!response.ok) throw new Error("Failed to save new room");
             
             dispatch(addRoom(newRoom));
-            navigate('/das');
+            navigate('/dashboard');
         } catch (error){
             console.error(error);
         }
