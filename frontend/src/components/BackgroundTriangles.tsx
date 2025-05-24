@@ -1,9 +1,8 @@
-// components/FloatingTriangles.tsx
 import React from 'react';
 
 const FloatingTriangles: React.FC = () => {
   return (
-    <div className="absolute bottom-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+    <div className="absolute    -0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
       {Array.from({ length: 10 }).map((_, i) => {
         const size = Math.random() * 30 + 25; // 25–55px
         const left = Math.random() * 40;      // position from left
