@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import { saveUserStudySession } from "./controllers/studentController.js";
+import UserRoomActivity from "./models/UserRoomActivity.js";
 
 const setupSocket = (server) => {
   const io = new Server(server, { cors: { origin: "*" } });
@@ -33,19 +34,16 @@ const setupSocket = (server) => {
       console.log("Stopping timer for userId:", userId);
       console.log("Stopped timer");
       const session = userTimers[roomId]?.[userId];
-      if (session && session.start) {
-        const start = session.start;
-        const duration = Math.floor((new Date(end) - start) / 60000); // mins
+      const end = new Date();
+      const start = session?.start;
+      if(!start) return;
 
-        // Clear from memory
-        delete userTimers[roomId][userId];
+      await saveUserStudySession(userId, roomId, start, end);
+      delete userTimers[roomId][userId];
 
-        // Save to DB
-        await saveUserStudySession(userId, roomId, start, end, duration);
+      const updatedStudent = await UserRoomActivity.findOne({userId, roomId}).populate('userId');
 
-        // Notify room
-        io.to(roomId).emit("userTimerStopped", { userId, end, duration });
-      }
+      io.to(roomId).emit("updateStudyTime", updatedStudent);
     });
 
     socket.on("disconnect", () => {

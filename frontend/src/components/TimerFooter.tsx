@@ -37,21 +37,38 @@ const TimerFooter: React.FC<TimerFooterProps> = ({ roomId, userId }) => {
     };
   }, [isRunning]);
 
+  useEffect(() => {
+    socket.connect();
+    socket.emit('joinRoom', {roomId, userId});
+
+    const fetchTime = async() => {
+      try{
+        const res = await fetch(`http://localhost:5000/api/activity/today/${userId}/${roomId}`);
+        const data = await res.json();
+        setTime = (data.time);
+      } catch (err){
+        console.error("Failed to fetch time: ", err);
+      }
+    };
+    fetchTime();
+
+    return () => {
+      socket.emit('leaveRoom', {roomId, userId});
+      socket.disconnect();
+    };
+  }, [roomId, userId]);
+
 
   const handleToggle = () => {
     if (isRunning) {
-      const endTime = new Date().toISOString();
-      const startTime = startTimeRef.current;
-      const elapsedSeconds = Math.floor((endTime.getTime() - startTime!.getTime())/1000);
 
       socket.emit('stopTimer', {
         roomId,
         userId,
-        duration: elapsedSeconds
+        start: startTimeRef.current?.toISOString(),
+        end: new Date().toISOString()
       });
-      console.log(endTime);
-      console.log("Emitting stopTimer", { roomId, userId, endTime });
-      socket.emit('stopTimer', { roomId, userId, endTime });
+      
     } else {
       const start = new Date().toISOString();
       startTimeRef.current = new Date(start);

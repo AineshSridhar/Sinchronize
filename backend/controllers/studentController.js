@@ -13,27 +13,56 @@ export const getUsers = async(req, res) => {
     }
 };
 
-export const saveUserStudySession = async (userId, roomId, start, end, duration) => {
-  const today = new Date().toISOString().split('T')[0];
-  const session = { start, end, duration };
-  console.log("darshan dediye apne");
-  const userActivity = await UserRoomActivity.findOne({ userId, roomId });
+export const saveUserStudySession = async (userId, roomId, start, end) => {
+  try{
+    const startDate = new Date(start);
+    const endDate = new Date(end);
 
-  if (!userActivity) {
-    console.log("It detect not present, will create")
-    await UserRoomActivity.create({
-      userId,
-      roomId,
-      timeStudiedHistory: [{ date: today, sessions: [session] }]
-    });
-  } else {
-    let history = userActivity.timeStudiedHistory;
-    const existingDay = history.find(d => d.date === today);
-    if (existingDay) {
-      existingDay.sessions.push(session);
-    } else {
-      history.push({ date: today, sessions: [session] });
+    console.log("darshan dediye apne");
+    const userActivity = await UserRoomActivity.findOne({ userId, roomId }) || new UserRoomActivity({userId, roomId, dailyStudy: new Map()});
+
+    let current = startDate;
+    
+    while(current < endDate){
+      const nextDay = new Date(current);
+      nextDay.setHours(24, 0, 0, 0);
+
+      const sessionEnd = endDate < nextDay ? endDate : nextDay
+      const duration = (sessionEnd - current)/1000;
+
+      totalDuration += duration;
+      
+      const existing = userActivity.dailyStudy.get(dateKey) || 0;
+      userActivity.dailyStudy.set(dateKey, existing + duration);
+
+      const session = {
+        start: new Date(start),
+        end: new Date(end),
+        duration,
+      }
+      const existingHistory = userActivity.timeStudiedHistory.find(h => h.date === dateKey);
+      if (existingHistory){
+        existingHistory.session.push(session);
+      } else {
+        userActivity.timeStudiedHistory.push({date: dateKey, sessions: [session]});
+      }
+      current = nextDay;
     }
     await userActivity.save();
+  } catch (err){
+    console.error("Error saving study session", err);
   }
 };
+
+export const getTodayStudyTime = async(req, res) => {
+  const {userId, roomId} = req.params;
+  const today = new Date().toISOString().split("T")[0];
+
+  try{
+    const activity = await UserRoomActivity.findOne({userId, roomId});
+    const seconds = activity?.dailyStudy.get(today) || 0;
+    res.status(200).json({time: Math.floor(seconds)});
+  } catch (err) {
+    res.status(500).json({message: "Failed to fetch today's time"});
+  }
+}
