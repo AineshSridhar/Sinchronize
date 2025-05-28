@@ -40,10 +40,18 @@ const TimerFooter: React.FC<TimerFooterProps> = ({ roomId, userId }) => {
 
   const handleToggle = () => {
     if (isRunning) {
-      const end = new Date().toISOString();
-      console.log(end);
-      console.log("Emitting stopTimer", { roomId, userId, end });
-      socket.emit('stopTimer', { roomId, userId, end });
+      const endTime = new Date().toISOString();
+      const startTime = startTimeRef.current;
+      const elapsedSeconds = Math.floor((endTime.getTime() - startTime!.getTime())/1000);
+
+      socket.emit('stopTimer', {
+        roomId,
+        userId,
+        duration: elapsedSeconds
+      });
+      console.log(endTime);
+      console.log("Emitting stopTimer", { roomId, userId, endTime });
+      socket.emit('stopTimer', { roomId, userId, endTime });
     } else {
       const start = new Date().toISOString();
       startTimeRef.current = new Date(start);

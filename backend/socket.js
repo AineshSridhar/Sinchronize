@@ -29,8 +29,8 @@ const setupSocket = (server) => {
       socket.to(roomId).emit("userTimerStarted", { userId, start });
     });
 
-    socket.on("stopTimer", async ({ roomId, userId, end }) => {
-    console.log("Stopping timer for userId:", userId); // <- Add this line
+    socket.on("stopTimer", async ({ roomId, userId}) => {
+      console.log("Stopping timer for userId:", userId);
       console.log("Stopped timer");
       const session = userTimers[roomId]?.[userId];
       if (session && session.start) {
@@ -47,6 +47,7 @@ const setupSocket = (server) => {
         io.to(roomId).emit("userTimerStopped", { userId, end, duration });
       }
     });
+
     socket.on("disconnect", () => {
       console.log("Socket disconnected:", socket.id);
     });

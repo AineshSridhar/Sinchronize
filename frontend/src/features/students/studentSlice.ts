@@ -37,6 +37,12 @@ const studentSlice = createSlice({
         fetchStudentsFailure(state: StudentsState, action: PayloadAction<string>){
             state.loading = false;
             state.error = action.payload;
+        },
+        updateStudentTime(state, action: PayloadAction<{userId: string; timeStudied: number}>) => {
+            const index = state.students.findIndex(s => s.userId === action.payload.userId);
+            if (index !== -1){
+                state.students[index].timeStudied = action.payload.timeStudied;
+            }
         }
     },
 });

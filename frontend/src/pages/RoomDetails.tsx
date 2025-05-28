@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom'
-import { fetchStudentsStart, fetchStudentsFailure, fetchStudentsSuccess } from '../features/students/studentSlice';
+import { fetchStudentsStart, fetchStudentsFailure, fetchStudentsSuccess, updateStudentTime } from '../features/students/studentSlice';
 import {RootState} from "../app/store"
 import TimerFooter from '../components/TimerFooter';
 import socket from '../socket'; // import the socket instance
@@ -69,6 +69,21 @@ const RoomDetails = () => {
         }
         fetchStudents();
     }, [room, dispatch]);
+
+    useEffect(() => {
+        const handleTimeUpdate = (updatedStudent: Student) => {
+            dispatch(updateStudentTime({
+                userId: updatedStudent.userId,
+                timeStudied: updatedStudent.timeStudied
+            }));
+        };
+
+        socket.on('updateStudentTime', handleTimeUpdate);
+
+        return () => {
+            socket.off('updateStudentTime', handleTimeUpdate);
+        }
+    }, [dispatch])
 
     if (!room) return <p>No room data provided</p>;
     if (loading) return <p>Loading students...</p>;
