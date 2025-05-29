@@ -45,7 +45,7 @@ const TimerFooter: React.FC<TimerFooterProps> = ({ roomId, userId }) => {
       try{
         const res = await fetch(`http://localhost:5000/api/activity/today/${userId}/${roomId}`);
         const data = await res.json();
-        setTime = (data.time);
+        setTime(data.time);
       } catch (err){
         console.error("Failed to fetch time: ", err);
       }

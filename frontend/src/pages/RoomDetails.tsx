@@ -4,14 +4,16 @@ import { useLocation } from 'react-router-dom'
 import { fetchStudentsStart, fetchStudentsFailure, fetchStudentsSuccess, updateStudentTime } from '../features/students/studentSlice';
 import {RootState} from "../app/store"
 import TimerFooter from '../components/TimerFooter';
-import socket from '../socket'; // import the socket instance
+import socket from '../socket';
 
 
 interface Student {
   _id: string;
   userId: string;
+  roomId: string;
   timeStudied: number;
   questionsSolved: number;
+  lastActive: string;
   streak: number;
 }
 
@@ -34,7 +36,7 @@ const RoomDetails = () => {
         if (!socket.connected){
             socket.connect();
         }
-        console.log("Emitting: ", {roomId: room._id, userId});
+        console.log("Joining Socket room: ", {roomId: room._id, userId});
         socket.emit('joinRoom', {roomId: room._id, userId});
 
         return () => {
@@ -54,13 +56,13 @@ const RoomDetails = () => {
                     method: "GET",
                     headers:{
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
                     },
                 })
 
                 if(!response.ok) throw new Error('Failed to fetch students');
                 const data = await response.json();
-                console.log(data);
+                console.log('Fetched students: ', data);
                 dispatch(fetchStudentsSuccess(data));
             } catch (err){
                 console.error(err);
@@ -84,6 +86,11 @@ const RoomDetails = () => {
             socket.off('updateStudentTime', handleTimeUpdate);
         }
     }, [dispatch])
+
+    useEffect(() => {
+        socket.connect();
+        socket.emit('joinRoom', {roomId, userId});
+    })
 
     if (!room) return <p>No room data provided</p>;
     if (loading) return <p>Loading students...</p>;
