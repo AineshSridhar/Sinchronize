@@ -86,12 +86,7 @@ const RoomDetails = () => {
             socket.off('updateStudentTime', handleTimeUpdate);
         }
     }, [dispatch])
-
-    useEffect(() => {
-        socket.connect();
-        socket.emit('joinRoom', {roomId, userId});
-    })
-
+    
     if (!room) return <p>No room data provided</p>;
     if (loading) return <p>Loading students...</p>;
     if (error) return <p className="text-red-500">Unable to load students. Please try again later.</p>;
