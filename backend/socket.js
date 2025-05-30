@@ -10,11 +10,24 @@ const setupSocket = (server) => {
   io.on("connection", (socket) => {
     console.log("Connected to socket server", socket.id);
 
-    socket.on("joinRoom", ({ roomId, userId }) => {
-      console.log("Joined room", socket.id);
-      socket.join(roomId);
-      socket.to(roomId).emit("userJoined", userId);
-    });
+    socket.on("joinRoom", async ({ roomId, userId }) => {
+  console.log("Joined room", socket.id);
+  socket.join(roomId);
+  socket.to(roomId).emit("userJoined", userId);
+
+  // Check for ongoing session
+  const activity = await UserRoomActivity.findOne({ userId, roomId });
+  const today = new Date().toISOString().split("T")[0];
+
+  if (activity?.currentSessionStart) {
+    const sessionStartDate = activity.currentSessionStart.toISOString().split("T")[0];
+    if (sessionStartDate === today) {
+      socket.emit("resumeTimer", {
+        start: activity.currentSessionStart.toISOString(),
+      });
+    }
+  }
+});
 
     socket.on("leaveRoom", ({ roomId, userId }) => {
       console.log(`User ${userId} left room ${roomId}`);
