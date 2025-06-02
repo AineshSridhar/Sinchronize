@@ -1,120 +1,157 @@
-import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom'
-import { fetchStudentsStart, fetchStudentsFailure, fetchStudentsSuccess, updateStudentTime } from '../features/students/studentSlice';
-import {RootState} from "../app/store"
-import TimerFooter from '../components/TimerFooter';
-import socket from '../socket';
-
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
+import {
+  fetchStudentsStart,
+  fetchStudentsFailure,
+  fetchStudentsSuccess,
+  updateStudentTime,
+} from "../features/students/studentSlice";
+import { RootState } from "../app/store";
+import TimerFooter from "../components/TimerFooter";
+import socket from "../socket";
 
 interface Student {
   _id: string;
-  userId: string;
+  userId: {
+    id: string;
+    name: string;
+  };
   roomId: string;
-  timeStudied: number;
+  dailyStudy: Record<string, number>;
+  currentSessionStart: string | null;
+  timeStudiedHistory: any[];
   questionsSolved: number;
   lastActive: string;
   streak: number;
 }
 
-const RoomDetails = () => {
-    const dispatch = useDispatch();
-    const location = useLocation();
-    const room = location.state?.room;
-    const {students, loading, error} = useSelector((state:RootState) => state.students) as {
-        students: Student[];
-        loading: boolean;
-        error: string | null;
+const RoomDetails: React.FC = () => {
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const room = location.state?.room;
+  const { students, loading, error } = useSelector(
+    (state: RootState) => state.students
+  ) as { students: Student[]; loading: boolean; error: string | null };
+  const userId = useSelector((state: RootState) => state.auth.user?.id);
+
+  // Live timers
+  const [activeTimers, setActiveTimers] = useState<Record<string, string>>({});
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!room || !userId) return;
+    if (!socket.connected) socket.connect();
+    socket.emit("joinRoom", { roomId: room._id, userId });
+    return () => {
+      socket.emit("leaveRoom", { roomId: room._id, userId });
+      socket.disconnect();
     };
-    const userId = useSelector((state: RootState) => state.auth.user?.id);
-    console.log("Current User ID in RoomDetails:", userId);
+  }, [room, userId]);
 
-    if (!room) return <p>No room data provided</p>;
+  useEffect(() => {
+    if (!room) return;
+    dispatch(fetchStudentsStart());
+    (async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(
+          `http://localhost:5000/api/rooms/${room._id}/students`,
+          {
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          }
+        );
+        if (!res.ok) throw new Error("Fetch failed");
+        const data = await res.json();
+        dispatch(fetchStudentsSuccess(data));
+      } catch (err) {
+        dispatch(fetchStudentsFailure((err as Error).message));
+      }
+    })();
+  }, [room, dispatch]);
 
-    useEffect(()=> {
-        if (!room || !userId) return;
-        if (!socket.connected){
-            socket.connect();
-        }
-        console.log("Joining Socket room: ", {roomId: room._id, userId});
-        socket.emit('joinRoom', {roomId: room._id, userId});
+  useEffect(() => {
+    const handleTimeUpdate = (s: Student) =>
+      dispatch(
+        updateStudentTime({ userId: s.userId.id, timeStudied: getCumulativeMinutes(s) })
+      );
+    const handleTimerStart = ({ userId, startedAt }: any) =>
+      setActiveTimers((p) => ({ ...p, [userId]: startedAt }));
+    const handleTimerStop = ({ userId }: any) =>
+      setActiveTimers((p) => { const c = { ...p }; delete c[userId]; return c; });
 
-        return () => {
-            socket.emit('leaveRoom', {roomId: room._id, userId});
-            socket.disconnect();
-        }
-    }, [room, userId])
+    socket.on("updateStudentTime", handleTimeUpdate);
+    socket.on("userTimerStarted", handleTimerStart);
+    socket.on("userTimerStopped", handleTimerStop);
+    return () => {
+      socket.off("updateStudentTime", handleTimeUpdate);
+      socket.off("userTimerStarted", handleTimerStart);
+      socket.off("userTimerStopped", handleTimerStop);
+    };
+  }, [dispatch]);
 
-    useEffect(() => {
-        if (!room) return;
+  const calculateElapsedSeconds = (startTime: string) =>
+    Math.floor((Date.now() - new Date(startTime).getTime()) / 1000);
 
-        const fetchStudents = async() => {
-            dispatch(fetchStudentsStart());
-            try{
-                const token = localStorage.getItem('token');
-                const response = await fetch (`http://localhost:5000/api/rooms/${room._id}/students`,{
-                    method: "GET",
-                    headers:{
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    },
-                })
+  const getCumulativeMinutes = (student: Student) =>
+    Object.values(student.dailyStudy || {}).reduce(
+      (sum, v) => sum + (typeof v === 'number' ? v : 0),
+      0
+    );
 
-                if(!response.ok) throw new Error('Failed to fetch students');
-                const data = await response.json();
-                console.log('Fetched students: ', data);
-                dispatch(fetchStudentsSuccess(data));
-            } catch (err){
-                console.error(err);
-                dispatch(fetchStudentsFailure((err as Error).message));
-            }
-        }
-        fetchStudents();
-    }, [room, dispatch]);
+  const getTotalSeconds = (s: Student) => {
+    const cum = Math.round(getCumulativeMinutes(s) * 60);
+    const live = activeTimers[s.userId.id]
+      ? calculateElapsedSeconds(activeTimers[s.userId.id])
+      : 0;
+    return cum + live;
+  };
 
-    useEffect(() => {
-        const handleTimeUpdate = (updatedStudent: Student) => {
-            dispatch(updateStudentTime({
-                userId: updatedStudent.userId,
-                timeStudied: updatedStudent.timeStudied
-            }));
-        };
-
-        socket.on('updateStudentTime', handleTimeUpdate);
-
-        return () => {
-            socket.off('updateStudentTime', handleTimeUpdate);
-        }
-    }, [dispatch])
-    
-    if (!room) return <p>No room data provided</p>;
-    if (loading) return <p>Loading students...</p>;
-    if (error) return <p className="text-red-500">Unable to load students. Please try again later.</p>;
+  const formatHHMMSS = (t: number) => {
+    if (isNaN(t) || t < 0) return '00:00:00';
+    const h = Math.floor(t/3600);
+    const m = Math.floor((t%3600)/60);
+    const s = t%60;
+    return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  };
 
   return (
-    <>
-    <div className="p-5">
-        <div >
-      <h1 className="text-xl text-purple-900"><span className="font-bold">Room: </span>{room.name}</h1>
-      <p className="text-xl text-purple-900"><span className="font-bold">Desc: </span>{room.description}</p>
-      <p className="text-xl text-purple-900 mb-3"><span className="font-bold">Members: </span>{room.members?.length || 0}</p>
-      </div>
-      <h2 className="text-center text-xl font-bold mb-4">Users</h2>
-        <div className="flex flex-wrap gap-5">
-            {students.map(student => {
-                return (<div key={student._id} className="w-1/4 border border-purple-700 border-3 p-4 rounded">
-                    <div>Name: {student.userId?.name || 'Unknown'}</div>
-                    <div>Time studied: {student.timeStudied || 100} mins</div>
-                    {/* <div>Questions Solved: {student.questionsSolved}</div> */}
-                    <div>Streak: {student.streak}</div>
-                </div>
-                );
-            })}
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Purple header strip */}
+      <header className="w-full bg-purple-700 py-4 shadow-md">
+        <h1 className="text-2xl text-white text-center font-semibold">
+          {room ? room.name : 'Room Details'}
+        </h1>
+      </header>
+      <main className="p-6">
+        {loading && <p>Loading...</p>}
+        {error && <p className="text-red-600">{error}</p>}
+        {!loading && !error && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {students.map((stu) => (
+              <div key={stu._id} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
+                <h2 className="text-lg font-bold text-purple-800 mb-2">{stu.userId.name}</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Time: <span className="font-mono">{formatHHMMSS(getTotalSeconds(stu))}</span>
+                </p>
+                <p className="text-sm text-gray-600">Streak: {stu.streak}</p>
+                {activeTimers[stu.userId.id] && (
+                  <span className="inline-block mt-3 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                    Active
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+      <TimerFooter roomId={room?._id!} userId={userId!} />
     </div>
-    <TimerFooter roomId ={room._id} userId={userId}/>
-    </>
-  )
-}
+  );
+};
 
-export default RoomDetails
+export default RoomDetails;

@@ -1,52 +1,68 @@
-import { useEffect } from 'react'
-import { useDispatch } from 'react-redux'
-import {RootState} from "../app/store.ts"
-import { useSelector } from 'react-redux';
-import { fetchRoomsFailure, fetchRoomsStart, fetchRoomsSuccess } from '../features/rooms/roomSlice';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import { RootState } from '../app/store'
+import { fetchRoomsFailure, fetchRoomsStart, fetchRoomsSuccess } from '../features/rooms/roomSlice'
 
-const RoomsList = () => {
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const {rooms, loading, error} = useSelector((state: RootState) => state.rooms)
+const RoomsList: React.FC = () => {
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const { rooms, loading, error } = useSelector((state: RootState) => state.rooms)
 
-    useEffect(() => {
-        const fetchRooms = async() => {
-            dispatch(fetchRoomsStart())
-            try{
-                const token = localStorage.getItem('token')
-                const response = await fetch('http://localhost:5000/api/rooms/myrooms', {
-                    method: "GET",
-                    headers: {
-                        'Content-Type':'application/json',
-                        'Authorization':`Bearer ${token}`
-                    },
-                });
-                const data = await response.json();
-                console.log(data);
-                dispatch(fetchRoomsSuccess(data))
-            } catch (err) {
-                dispatch(fetchRoomsFailure('Failed to fetch rooms'))
-            }
-        }
-        fetchRooms()
-    }, [dispatch])
-
-    if (loading) return <p>Loading...</p>
-    if (error) return <p>Error: {error}</p>
+  useEffect(() => {
+    const fetchRooms = async () => {
+      dispatch(fetchRoomsStart())
+      try {
+        const token = localStorage.getItem('token')
+        const res = await fetch('http://localhost:5000/api/rooms/myrooms', {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (!res.ok) throw new Error('Fetch failed')
+        const data = await res.json()
+        dispatch(fetchRoomsSuccess(data))
+      } catch (err) {
+        dispatch(fetchRoomsFailure('Failed to fetch rooms'))
+      }
+    }
+    fetchRooms()
+  }, [dispatch])
 
   return (
-    <div>
-        <h2 className="text-2xl font-bold mb-5">My Rooms</h2>
-        <div className="flex flex-wrap gap-4">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Strip */}
+      <header className="w-full bg-purple-700 py-4 shadow-md">
+        <h1 className="text-2xl text-white text-center font-semibold">My Rooms</h1>
+      </header>
+
+      <main className="p-6">
+        {loading && <p>Loading rooms...</p>}
+        {error && <p className="text-red-600">Error: {error}</p>}
+
+        {!loading && !error && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {rooms.map(room => (
-                <div key={room.id} onClick={() => navigate(`/rooms/${room._id}`, { state: { room } })} className="w-1/5 border border-purple-500 border-2 cursor-pointer rounded-lg p-3 w-1/2 text-left">
-                        <h3 className="mb-1 font-bold"><span className="text-purple-500">Study Room: </span>{room.name}</h3>
-                        <p><span className="font-bold">Description: </span>{room.description}</p>
-                        <p><span className="font-bold">Members: </span>{room.members.length}</p>
-                </div>
+              <div
+                key={room._id}
+                onClick={() => navigate(`/rooms/${room._id}`, { state: { room } })}
+                className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition cursor-pointer"
+              >
+                <h2 className="text-lg font-bold text-purple-800 mb-2">
+                  {room.name}
+                </h2>
+                <p className="text-sm text-gray-600 mb-3">
+                  {room.description}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Members: <span className="font-semibold text-purple-700">{room.members.length}</span>
+                </p>
+              </div>
             ))}
-        </div>  
+          </div>
+        )}
+      </main>
     </div>
   )
 }

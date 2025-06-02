@@ -12,9 +12,10 @@ const TimerFooter: React.FC<TimerFooterProps> = ({ roomId, userId }) => {
   const [time, setTime] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<Date | null>(null);
+  const timeAddedRef = useRef(false); // to prevent adding elapsed time multiple times
 
   useEffect(() => {
-    socket.connect();
+    if (!socket.connected) socket.connect();
     socket.emit("joinRoom", { roomId, userId });
 
     return () => {
@@ -24,20 +25,23 @@ const TimerFooter: React.FC<TimerFooterProps> = ({ roomId, userId }) => {
   }, [roomId, userId]);
 
   useEffect(() => {
-    const handleResumeTimer = ({ start }) => {
+    const handleResumeTimer = ({ start }: { start: string }) => {
       const startTime = new Date(start);
       startTimeRef.current = startTime;
       setIsRunning(true);
-      const elapsedSeconds = Math.floor(
-        (Date.now() - startTime.getTime()) / 1000
-      );
-      setTime((prev) => prev + elapsedSeconds);
+
+      // Add elapsed seconds only once
+      if (!timeAddedRef.current) {
+        const elapsedSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+        setTime((prev) => prev + elapsedSeconds);
+        timeAddedRef.current = true;
+      }
     };
 
     socket.on("resumeTimer", handleResumeTimer);
-
     return () => {
       socket.off("resumeTimer", handleResumeTimer);
+      timeAddedRef.current = false;
     };
   }, []);
 
@@ -48,6 +52,7 @@ const TimerFooter: React.FC<TimerFooterProps> = ({ roomId, userId }) => {
       }, 1000);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
 
     return () => {
@@ -56,26 +61,20 @@ const TimerFooter: React.FC<TimerFooterProps> = ({ roomId, userId }) => {
   }, [isRunning]);
 
   useEffect(() => {
-    socket.connect();
-    socket.emit("joinRoom", { roomId, userId });
-
+    // Fetch initial time on mount or when userId/roomId changes
     const fetchTime = async () => {
       try {
         const res = await fetch(
           `http://localhost:5000/api/rooms/activity/today/${userId}/${roomId}`
         );
+        if (!res.ok) throw new Error("Failed to fetch time");
         const data = await res.json();
         setTime(data.time);
       } catch (err) {
-        console.error("Failed to fetch time: ", err);
+        console.error("Failed to fetch time:", err);
       }
     };
     fetchTime();
-
-    return () => {
-      socket.emit("leaveRoom", { roomId, userId });
-      socket.disconnect();
-    };
   }, [roomId, userId]);
 
   const handleToggle = () => {
@@ -86,6 +85,8 @@ const TimerFooter: React.FC<TimerFooterProps> = ({ roomId, userId }) => {
         start: startTimeRef.current?.toISOString(),
         end: new Date().toISOString(),
       });
+      startTimeRef.current = null;
+      timeAddedRef.current = false;
     } else {
       const start = new Date().toISOString();
       startTimeRef.current = new Date(start);
@@ -107,11 +108,7 @@ const TimerFooter: React.FC<TimerFooterProps> = ({ roomId, userId }) => {
         onClick={handleToggle}
         className="text-white p-2 border border-white border-2 rounded-full mt-2"
       >
-        {isRunning ? (
-          <Pause className="w-4 h-4" />
-        ) : (
-          <Play className="w-4 h-4" />
-        )}
+        {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
       </button>
       <div className="text-3xl">{formatTime(time)}</div>
       <hr className="my-4" />

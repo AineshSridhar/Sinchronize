@@ -1,14 +1,30 @@
 import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 
-export interface Student{
-    _id: string;
-    userId: string;
-    roomId: string;
-    timeStudied: number;
-    questionsSolved: number;
-    lastActive: string;
-    streak: number;
+
+export interface Student {
+  _id: string;
+  userId: {
+    id: string;
+    name: string;
+  };
+  roomId: string;
+  timeStudied: number;
+  isStudying: boolean;
+  currentStartTime?: string; // optional ISO timestamp
+  questionsSolved: number;
+  lastActive: string;
+  streak: number;
 }
+
+// export interface Student{
+//     _id: string;
+//     userId: string;
+//     roomId: string;
+//     timeStudied: number;
+//     questionsSolved: number;
+//     lastActive: string;
+//     streak: number;
+// }
 
 interface StudentsState{
     students: Student[];
@@ -38,11 +54,18 @@ const studentSlice = createSlice({
             state.loading = false;
             state.error = action.payload;
         },
-        updateStudentTime(state, action: PayloadAction<{userId: string; timeStudied: number}>) {
-            const index = state.students.findIndex(s => s.userId === action.payload.userId);
-            if (index !== -1){
-                state.students[index].timeStudied = action.payload.timeStudied;
-            }
+        updateStudentTime(state, action: PayloadAction<{
+        userId: string;
+        timeStudied: number;
+        isStudying: boolean;
+        currentStartTime?: string;
+        }>) {
+        const index = state.students.findIndex(s => s.userId.id === action.payload.userId);
+        if (index !== -1) {
+            state.students[index].timeStudied = action.payload.timeStudied;
+            state.students[index].isStudying = action.payload.isStudying;
+            state.students[index].currentStartTime = action.payload.currentStartTime;
+        }
         }
     },
 });

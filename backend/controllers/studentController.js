@@ -5,11 +5,17 @@ export const getUsers = async (req, res) => {
   console.log("req.params:", req.params);
   try {
     const id = req.params.id;
-    const students = await UserRoomActivity.find({ roomId: id }).populate(
-      "userId",
-      "name"
-    );
-    res.status(200).json(students);
+    const students = await UserRoomActivity.find({ roomId: id }).populate("userId", "name")
+      .lean();
+    const transformed = students.map((student) => ({
+      ...student,
+      userId: {
+        id: student.userId._id.toString(),
+        name: student.userId.name,
+      },
+    }));
+
+    res.status(200).json(transformed);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to fetch students" });
@@ -21,7 +27,6 @@ export const saveUserStudySession = async (userId, roomId, start, end) => {
     const startDate = new Date(start);
     const endDate = new Date(end);
 
-    console.log("darshan dediye apne");
     const userActivity =
       (await UserRoomActivity.findOne({ userId, roomId })) ||
       new UserRoomActivity({ userId, roomId, dailyStudy: new Map() });
@@ -44,8 +49,8 @@ export const saveUserStudySession = async (userId, roomId, start, end) => {
       userActivity.dailyStudy.set(dateKey, existing + duration);
 
       const session = {
-        start: new Date(start),
-        end: new Date(end),
+        start: new Date(current),
+        end: new Date(sessionEnd),
         duration,
       };
       const existingHistory = userActivity.timeStudiedHistory.find(
