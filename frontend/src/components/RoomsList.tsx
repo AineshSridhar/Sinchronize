@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { RootState } from '../app/store'
 import { fetchRoomsFailure, fetchRoomsStart, fetchRoomsSuccess } from '../features/rooms/roomSlice'
 
+// For room management
 const RoomsList: React.FC = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
